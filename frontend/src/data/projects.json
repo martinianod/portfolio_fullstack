@@ -1,0 +1,32 @@
+[
+  {
+    "id": "chedoparti",
+    "title": "Chedoparti",
+    "description": "Plataforma SaaS para gestión y reserva de canchas deportivas. Incluye calendario interactivo, sistema de pagos y panel de administración.",
+    "tech": ["Java", "Spring Boot", "React", "PostgreSQL", "Docker"],
+    "demo": "https://chedoparti.com",
+    "repo": "https://github.com/martiniano/chedoparti",
+    "tag": "SaaS Product",
+    "image": "/images/projects/chedoparti_dashboard_mockup.png"
+  },
+  {
+    "id": "fitlife",
+    "title": "FitLife Manager",
+    "description": "Sistema de gestión integral para gimnasios y centros de salud. Monitoreo de alumnos, rutinas personalizadas y facturación.",
+    "tech": ["React", "Node.js", "Express", "MongoDB", "Redux"],
+    "demo": "#",
+    "repo": "https://github.com/martiniano/fitlife",
+    "tag": "HealthTech",
+    "image": "/images/projects/fitlife_health_dashboard.png"
+  },
+  {
+    "id": "n8n-flows",
+    "title": "Automations Engine",
+    "description": "Motor de automatización de flujos de trabajo inspirado en n8n. Permite conectar servicios vía webhooks y ejecutar lógica compleja.",
+    "tech": ["TypeScript", "Node.js", "Vue.js", "Redis"],
+    "demo": "#",
+    "repo": "https://github.com/martiniano/automation-engine",
+    "tag": "DevTool",
+    "image": "/images/projects/n8n_automation_workflow.png"
+  }
+]
