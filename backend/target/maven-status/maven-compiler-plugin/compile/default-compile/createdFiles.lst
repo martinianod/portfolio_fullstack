@@ -1,0 +1,9 @@
+com/martiniano/crm/repository/UserRepository.class
+com/martiniano/crm/config/SecurityConfig.class
+com/martiniano/contact/EmailService.class
+com/martiniano/contact/ContactBackendApplication.class
+com/martiniano/crm/security/CustomUserDetailsService.class
+com/martiniano/crm/entity/User.class
+com/martiniano/contact/ContactController.class
+com/martiniano/contact/ContactDto.class
+com/martiniano/crm/security/JwtRequestFilter.class
