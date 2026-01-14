@@ -22,13 +22,16 @@ public class LeadService {
     private final LeadRepository leadRepository;
     private final UserRepository userRepository;
     private final ActivityService activityService;
+    private final EmailService emailService;
 
     public LeadService(LeadRepository leadRepository,
                        UserRepository userRepository,
-                       ActivityService activityService) {
+                       ActivityService activityService,
+                       EmailService emailService) {
         this.leadRepository = leadRepository;
         this.userRepository = userRepository;
         this.activityService = activityService;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -49,6 +52,9 @@ public class LeadService {
 
         activityService.logActivity("LEAD", savedLead.getId(), "CREATED", 
                 "Lead created from " + request.getSource(), null, null);
+        
+        // Send notification email
+        emailService.sendContactEmail(request.getName(), request.getEmail(), request.getMessage());
 
         return savedLead;
     }

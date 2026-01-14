@@ -1,8 +1,12 @@
-/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/contact/ContactBackendApplication.java
-/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/contact/ContactController.java
-/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/contact/ContactDto.java
-/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/contact/EmailService.java
+/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/PortfolioCrmApplication.java
+/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/config/GlobalExceptionHandler.java
 /home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/config/SecurityConfig.java
+/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/controller/ActivityController.java
+/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/controller/AuthController.java
+/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/controller/ClientController.java
+/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/controller/DashboardController.java
+/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/controller/LeadController.java
+/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/controller/ProjectController.java
 /home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/dto/ActivityRequest.java
 /home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/dto/ClientRequest.java
 /home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/dto/LeadCreateRequest.java
@@ -34,5 +38,6 @@
 /home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/service/AuthService.java
 /home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/service/ClientService.java
 /home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/service/DashboardService.java
+/home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/service/EmailService.java
 /home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/service/LeadService.java
 /home/runner/work/portfolio_fullstack/portfolio_fullstack/backend/src/main/java/com/martiniano/crm/service/ProjectService.java
