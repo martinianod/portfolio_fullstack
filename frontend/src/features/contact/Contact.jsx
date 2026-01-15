@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { FiSend, FiMail, FiDownload, FiCheckCircle, FiAlertCircle, FiLoader } from "react-icons/fi";
+import { FaWhatsapp } from "react-icons/fa";
 import Section from "../../components/ui/Section";
 import Container from "../../components/ui/Container";
 import Button from "../../components/ui/Button";
@@ -11,12 +12,37 @@ export default function Contact() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
+    company: "",
+    budgetRange: "",
+    projectType: "",
     message: "",
   });
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState(null);
   const [touched, setTouched] = useState({});
+  const [honeypot, setHoneypot] = useState("");
   const { t, i18n } = useTranslation();
+
+  const budgetOptions = [
+    { value: "", label: t("contact.budget.select") || "Select budget range" },
+    { value: "< $2k", label: "< $2,000" },
+    { value: "$2k-$5k", label: "$2,000 - $5,000" },
+    { value: "$5k-$10k", label: "$5,000 - $10,000" },
+    { value: "$10k-$20k", label: "$10,000 - $20,000" },
+    { value: "$20k+", label: "$20,000+" },
+  ];
+
+  const projectTypes = [
+    { value: "", label: t("contact.project_type.select") || "Select project type" },
+    { value: "Web Application", label: t("contact.project_type.web_app") || "Web Application" },
+    { value: "E-Commerce", label: t("contact.project_type.ecommerce") || "E-Commerce" },
+    { value: "Landing Page", label: t("contact.project_type.landing") || "Landing Page" },
+    { value: "Mobile App", label: t("contact.project_type.mobile") || "Mobile App" },
+    { value: "API/Backend", label: t("contact.project_type.api") || "API/Backend" },
+    { value: "Consulting", label: t("contact.project_type.consulting") || "Consulting" },
+    { value: "Other", label: t("contact.project_type.other") || "Other" },
+  ];
 
   // Keep existing validation logic but cleaner
   const validateField = (name, value) => {
@@ -51,6 +77,13 @@ export default function Contact() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    
+    // Honeypot check (anti-spam)
+    if (honeypot) {
+      console.warn("Bot detected");
+      return;
+    }
+    
     setTouched({ name: true, email: true, message: true });
     
     // Quick full validation
@@ -61,9 +94,20 @@ export default function Contact() {
     if (nameValid && emailValid && msgValid) {
       setStatus("loading");
       try {
-        await ContactService.sendLead({ ...formData, source: "portfolio_v2" });
+        await ContactService.sendLead({ 
+          ...formData, 
+          source: "portfolio_web" 
+        });
         setStatus("success");
-        setFormData({ name: "", email: "", message: "" });
+        setFormData({ 
+          name: "", 
+          email: "", 
+          phone: "",
+          company: "",
+          budgetRange: "",
+          projectType: "",
+          message: "" 
+        });
         setTouched({});
         setErrors({});
         setTimeout(() => setStatus(null), 5000);
@@ -78,6 +122,14 @@ export default function Contact() {
       validateField("email", formData.email);
       validateField("message", formData.message);
     }
+  };
+
+  const openWhatsApp = () => {
+    const phone = import.meta.env.VITE_WHATSAPP_NUMBER || "+5491234567890";
+    const message = encodeURIComponent(
+      `Hola! Me interesa conversar sobre un proyecto.${formData.name ? `\n\nMi nombre: ${formData.name}` : ""}${formData.projectType ? `\nTipo de proyecto: ${formData.projectType}` : ""}${formData.message ? `\n\nMensaje: ${formData.message}` : ""}`
+    );
+    window.open(`https://wa.me/${phone.replace(/\D/g, "")}?text=${message}`, "_blank");
   };
 
   const inputClasses = (hasError) => `
@@ -147,50 +199,131 @@ export default function Contact() {
             transition={{ delay: 0.2 }}
             className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700"
           >
-            <form onSubmit={onSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  {t("contact.name_placeholder")}
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={inputClasses(touched.name && errors.name)}
-                  placeholder="John Doe"
-                />
-                {touched.name && errors.name && (
-                  <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
-                    <FiAlertCircle /> {errors.name}
-                  </p>
-                )}
+            <form onSubmit={onSubmit} className="space-y-5">
+              {/* Honeypot field - hidden from users */}
+              <input
+                type="text"
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                style={{ position: "absolute", left: "-9999px" }}
+                tabIndex="-1"
+                autoComplete="off"
+              />
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    {t("contact.name_placeholder") || "Name"} *
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={inputClasses(touched.name && errors.name)}
+                    placeholder="John Doe"
+                  />
+                  {touched.name && errors.name && (
+                    <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                      <FiAlertCircle /> {errors.name}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    {t("contact.email_placeholder") || "Email"} *
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={inputClasses(touched.email && errors.email)}
+                    placeholder="john@company.com"
+                  />
+                  {touched.email && errors.email && (
+                    <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                      <FiAlertCircle /> {errors.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    {t("contact.phone_placeholder") || "Phone / WhatsApp"}
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className={inputClasses(false)}
+                    placeholder="+1 234 567 8900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    {t("contact.company_placeholder") || "Company"}
+                  </label>
+                  <input
+                    type="text"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleChange}
+                    className={inputClasses(false)}
+                    placeholder="Your Company Inc."
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    {t("contact.budget_label") || "Budget Range"}
+                  </label>
+                  <select
+                    name="budgetRange"
+                    value={formData.budgetRange}
+                    onChange={handleChange}
+                    className={inputClasses(false)}
+                  >
+                    {budgetOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    {t("contact.project_type_label") || "Project Type"}
+                  </label>
+                  <select
+                    name="projectType"
+                    value={formData.projectType}
+                    onChange={handleChange}
+                    className={inputClasses(false)}
+                  >
+                    {projectTypes.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  {t("contact.email_placeholder")}
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={inputClasses(touched.email && errors.email)}
-                  placeholder="john@company.com"
-                />
-                {touched.email && errors.email && (
-                  <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
-                    <FiAlertCircle /> {errors.email}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                   {t("contact.message_placeholder")}
+                   {t("contact.message_placeholder") || "Message"} *
                 </label>
                 <textarea
                   name="message"
@@ -199,7 +332,7 @@ export default function Contact() {
                   onBlur={handleBlur}
                   rows={4}
                   className={inputClasses(touched.message && errors.message)}
-                  placeholder="Tell me about your project context..."
+                  placeholder="Tell me about your project..."
                 />
                 {touched.message && errors.message && (
                   <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
@@ -208,16 +341,43 @@ export default function Contact() {
                 )}
               </div>
 
-              <Button type="submit" variant="primary" className="w-full gap-2" disabled={status === "success" || status === "loading"}>
-                {status === "loading" && <FiLoader className="animate-spin" />}
-                {status === "success" && <FiCheckCircle />}
-                {status !== "loading" && status !== "success" && <FiSend />}
-                {status === "success" ? t("contact.success") : status === "loading" ? "Sending..." : t("contact.send")}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  type="submit" 
+                  variant="primary" 
+                  className="flex-1 gap-2 justify-center" 
+                  disabled={status === "success" || status === "loading"}
+                >
+                  {status === "loading" && <FiLoader className="animate-spin" />}
+                  {status === "success" && <FiCheckCircle />}
+                  {status !== "loading" && status !== "success" && <FiSend />}
+                  {status === "success" 
+                    ? t("contact.success") || "Sent!" 
+                    : status === "loading" 
+                    ? "Sending..." 
+                    : t("contact.send") || "Send Message"}
+                </Button>
+                
+                <Button
+                  type="button"
+                  onClick={openWhatsApp}
+                  variant="secondary"
+                  className="flex-1 gap-2 justify-center bg-green-600 hover:bg-green-700 text-white border-green-600"
+                >
+                  <FaWhatsapp className="text-xl" />
+                  {t("contact.whatsapp") || "WhatsApp"}
+                </Button>
+              </div>
               
               {status === "error" && (
                 <p className="text-center text-sm text-red-500 mt-2">
-                  {t("contact.errors.validation_failed")}
+                  {t("contact.errors.validation_failed") || "Please check the form and try again."}
+                </p>
+              )}
+
+              {status === "success" && (
+                <p className="text-center text-sm text-green-600 dark:text-green-400 mt-2 flex items-center justify-center gap-2">
+                  <FiCheckCircle /> {t("contact.success_message") || "Thank you! I'll get back to you soon."}
                 </p>
               )}
             </form>

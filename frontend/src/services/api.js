@@ -40,7 +40,7 @@ api.interceptors.response.use(
 export const ContactService = {
   /**
    * Send a new contact lead to the backend CRM
-   * @param {Object} data - { name, email, message, source }
+   * @param {Object} data - { name, email, phone, company, budgetRange, projectType, message, source }
    */
   sendLead: async (data) => {
     // Simulate delay for better UX if local to avoid instant flash
@@ -49,7 +49,7 @@ export const ContactService = {
         await new Promise(r => setTimeout(r, 1000));
         return { success: true, message: "Lead captured (Mock)" };
     }
-    return api.post("/leads", data);
+    return api.post("/leads/public", data);
   },
 };
 
