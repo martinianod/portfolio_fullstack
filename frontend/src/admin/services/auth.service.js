@@ -8,16 +8,39 @@ const AuthService = {
         password,
       });
       
-      const { token, user } = response.data;
+      const { token, username, email: userEmail, role } = response.data;
       
       if (token) {
         localStorage.setItem('auth_token', token);
-        localStorage.setItem('auth_user', JSON.stringify(user));
+        localStorage.setItem('auth_user', JSON.stringify({
+          username,
+          email: userEmail,
+          role
+        }));
       }
       
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Login failed' };
+      // Enhanced error handling
+      if (error.response) {
+        // Server responded with error
+        const errorData = error.response.data;
+        if (errorData.message) {
+          throw new Error(errorData.message);
+        } else if (errorData.fields) {
+          // Validation errors
+          const fieldMessages = Object.values(errorData.fields).join(', ');
+          throw new Error(`Validation error: ${fieldMessages}`);
+        } else {
+          throw new Error('Login failed. Please check your credentials.');
+        }
+      } else if (error.request) {
+        // Request made but no response
+        throw new Error('Cannot connect to server. Please check if the backend is running.');
+      } else {
+        // Something else happened
+        throw new Error(error.message || 'An unexpected error occurred');
+      }
     }
   },
 
