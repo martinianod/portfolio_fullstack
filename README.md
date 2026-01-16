@@ -148,8 +148,91 @@ portfolio_fullstack/
 **⚠️ CHANGE IN PRODUCTION!**
 
 - **Username:** `admin`
+- **Email:** `admin@martiniano.dev` (can also use for login)
 - **Password:** `admin123`
-- **Email:** `admin@martiniano.dev`
+
+> **Note:** The login system accepts both username and email for authentication.
+
+## 🔍 Troubleshooting
+
+### Backend Health Check Shows DOWN
+
+1. **Check database connection**
+   ```bash
+   # Verify PostgreSQL is running
+   docker-compose ps postgres
+   
+   # Check health details
+   curl http://localhost:8080/actuator/health
+   ```
+
+2. **Verify environment variables**
+   - Ensure `DATABASE_URL`, `DATABASE_USER`, and `DATABASE_PASSWORD` are correct
+   - Check that database exists and migrations ran successfully
+
+3. **Mail service issues**
+   - The mail health check is disabled by default in development
+   - If enabled, ensure SMTP credentials are correct
+
+### Login Returns 400 Bad Request
+
+1. **Verify request format**
+   ```bash
+   # Test with curl
+   curl -X POST http://localhost:8080/api/v1/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"admin@martiniano.dev","password":"admin123"}'
+   ```
+
+2. **Check CORS configuration**
+   - Ensure `CORS_ORIGINS` includes your frontend URL
+   - Default: `http://localhost:5173,http://localhost:3000`
+
+3. **Verify credentials**
+   - Username: `admin` OR Email: `admin@martiniano.dev`
+   - Password: `admin123`
+
+### Frontend Cannot Connect to Backend
+
+1. **Check API URL configuration**
+   ```bash
+   # In frontend/.env
+   VITE_API_URL=http://localhost:8080
+   ```
+
+2. **Verify backend is running**
+   ```bash
+   curl http://localhost:8080/actuator/health
+   ```
+
+3. **Check browser console for errors**
+   - CORS errors indicate backend CORS configuration issue
+   - Network errors indicate backend is not accessible
+
+### Database Migration Fails
+
+1. **Clean database and retry**
+   ```bash
+   docker-compose down -v
+   docker-compose up postgres -d
+   docker-compose up backend
+   ```
+
+2. **Check migration files**
+   - Located in `backend/src/main/resources/db/migration/`
+   - V1__initial_schema.sql creates tables
+   - V2__seed_data.sql creates admin user and sample data
+
+### Verification Checklist
+
+After starting the application, verify:
+
+- [ ] PostgreSQL is running: `docker-compose ps postgres`
+- [ ] Backend health is UP: `curl http://localhost:8080/actuator/health`
+- [ ] Backend responds to login: `curl -X POST http://localhost:8080/api/v1/auth/login -H "Content-Type: application/json" -d '{"email":"admin@martiniano.dev","password":"admin123"}'`
+- [ ] Frontend is accessible: Open `http://localhost:5173`
+- [ ] Admin login works: Login at `http://localhost:5173/admin/login`
+- [ ] Dashboard loads: After login, verify dashboard shows data
 
 ## 📚 API Documentation
 
