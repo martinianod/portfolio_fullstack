@@ -32,14 +32,15 @@ public class AuthService {
 
     public LoginResponse authenticate(LoginRequest loginRequest) {
         try {
-            // loadUserByUsername now supports both username and email
+            // loadUserByUsername now supports both username and email for backward compatibility
             UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getEmail());
             
             if (!passwordEncoder.matches(loginRequest.getPassword(), userDetails.getPassword())) {
                 throw new BadCredentialsException("Invalid credentials");
             }
 
-            // Find user by username or email
+            // Find user by email (primary) or username (fallback for internal users)
+            // The API accepts email, but users may have username != email
             User user = userRepository.findByEmail(loginRequest.getEmail())
                     .or(() -> userRepository.findByUsername(loginRequest.getEmail()))
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));

@@ -17,4 +17,4 @@ VALUES
     ('John Smith', 'john.smith@example.com', '+1234567890', 'Tech Startup Inc', '$5k-$10k', 'Web Application', 'We need a custom CRM solution for our sales team', 'web', 'NEW', 'HIGH'),
     ('Maria Garcia', 'maria@designco.com', '+1234567891', 'DesignCo', '$2k-$5k', 'Landing Page', 'Looking for a modern landing page with animations', 'web', 'CONTACTED', 'MEDIUM'),
     ('David Chen', 'david@ecommerce.com', '+1234567892', 'E-Commerce Plus', '$10k+', 'E-Commerce', 'Need to build a full e-commerce platform', 'email', 'QUALIFIED', 'HIGH')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (email) DO NOTHING;
