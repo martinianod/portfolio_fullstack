@@ -59,31 +59,6 @@ class AuthControllerTest {
     }
 
     @Test
-    void testLoginSuccess_WithUsername() throws Exception {
-        // Arrange
-        LoginRequest request = new LoginRequest();
-        request.setUsername("admin");
-        request.setPassword("admin123");
-
-        LoginResponse response = new LoginResponse(
-                "mock-jwt-token",
-                "admin",
-                "admin@martiniano.dev",
-                "ADMIN"
-        );
-
-        when(authService.authenticate(any(LoginRequest.class))).thenReturn(response);
-
-        // Act & Assert
-        mockMvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists())
-                .andExpect(jsonPath("$.username").exists());
-    }
-
-    @Test
     void testLoginFailure_InvalidCredentials() throws Exception {
         // Arrange
         LoginRequest request = new LoginRequest();
@@ -107,7 +82,7 @@ class AuthControllerTest {
         // Arrange
         LoginRequest request = new LoginRequest();
         request.setPassword("admin123");
-        // email/username is missing
+        // email is missing
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/auth/login")
@@ -115,7 +90,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation failed"))
-                .andExpect(jsonPath("$.fields.username").exists());
+                .andExpect(jsonPath("$.fields.email").exists());
     }
 
     @Test
@@ -149,3 +124,4 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.error").value("Validation failed"));
     }
 }
+

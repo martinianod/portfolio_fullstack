@@ -33,15 +33,15 @@ public class AuthService {
     public LoginResponse authenticate(LoginRequest loginRequest) {
         try {
             // loadUserByUsername now supports both username and email
-            UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
+            UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getEmail());
             
             if (!passwordEncoder.matches(loginRequest.getPassword(), userDetails.getPassword())) {
                 throw new BadCredentialsException("Invalid credentials");
             }
 
             // Find user by username or email
-            User user = userRepository.findByUsername(loginRequest.getUsername())
-                    .or(() -> userRepository.findByEmail(loginRequest.getUsername()))
+            User user = userRepository.findByEmail(loginRequest.getEmail())
+                    .or(() -> userRepository.findByUsername(loginRequest.getEmail()))
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
             String token = jwtUtil.generateToken(userDetails.getUsername());
