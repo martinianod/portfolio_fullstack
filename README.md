@@ -147,11 +147,11 @@ portfolio_fullstack/
 
 **⚠️ CHANGE IN PRODUCTION!**
 
-- **Username:** `admin`
-- **Email:** `admin@martiniano.dev` (can also use for login)
+- **Email:** `admin@martiniano.dev` (use this for login)
 - **Password:** `admin123`
+- **Role:** ADMIN
 
-> **Note:** The login system accepts both username and email for authentication.
+> **Important:** The API accepts **email** (not username) in the login request. Use `{"email":"admin@martiniano.dev","password":"admin123"}` format.
 
 ## 🔍 Troubleshooting
 
@@ -162,7 +162,7 @@ portfolio_fullstack/
    # Verify PostgreSQL is running
    docker-compose ps postgres
    
-   # Check health details
+   # Check health details with components
    curl http://localhost:8080/actuator/health
    ```
 
@@ -174,14 +174,24 @@ portfolio_fullstack/
    - The mail health check is disabled by default in development
    - If enabled, ensure SMTP credentials are correct
 
+4. **Check application logs**
+   ```bash
+   docker-compose logs backend | tail -100
+   ```
+
 ### Login Returns 400 Bad Request
 
-1. **Verify request format**
+1. **IMPORTANT: Use email field, not username**
    ```bash
-   # Test with curl
+   # ✅ CORRECT - API expects email field
    curl -X POST http://localhost:8080/api/v1/auth/login \
      -H "Content-Type: application/json" \
      -d '{"email":"admin@martiniano.dev","password":"admin123"}'
+   
+   # ❌ WRONG - This will return validation error
+   curl -X POST http://localhost:8080/api/v1/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"username":"admin","password":"admin123"}'
    ```
 
 2. **Check CORS configuration**
@@ -189,8 +199,32 @@ portfolio_fullstack/
    - Default: `http://localhost:5173,http://localhost:3000`
 
 3. **Verify credentials**
-   - Username: `admin` OR Email: `admin@martiniano.dev`
-   - Password: `admin123`
+   - Email: `admin@martiniano.dev` (required - use email, not username)
+   - Password: `admin123` (case-sensitive)
+
+### Login Returns 401 Unauthorized
+
+1. **Password incorrect**
+   - Ensure you're using exactly `admin123` (case-sensitive)
+   - BCrypt hash in database must match
+
+2. **User not found**
+   - DataInitializer creates admin user automatically on startup
+   - Check logs for "Creating default admin user" message
+   
+3. **Verify user exists in database**
+   ```bash
+   docker-compose exec postgres psql -U portfolio -d portfolio_crm \
+     -c "SELECT username, email, role, enabled FROM users WHERE email='admin@martiniano.dev';"
+   ```
+
+4. **Force recreate database if needed**
+   ```bash
+   docker-compose down -v
+   docker-compose up -d
+   # Wait for backend to start and check logs
+   docker-compose logs backend | grep "admin"
+   ```
 
 ### Frontend Cannot Connect to Backend
 
@@ -200,39 +234,91 @@ portfolio_fullstack/
    VITE_API_URL=http://localhost:8080
    ```
 
-2. **Verify backend is running**
+2. **Verify backend is running and healthy**
    ```bash
    curl http://localhost:8080/actuator/health
+   # Should return: {"status":"UP",...}
    ```
 
 3. **Check browser console for errors**
    - CORS errors indicate backend CORS configuration issue
    - Network errors indicate backend is not accessible
+   - Check Network tab in browser DevTools
 
 ### Database Migration Fails
 
 1. **Clean database and retry**
    ```bash
-   docker-compose down -v
-   docker-compose up postgres -d
-   docker-compose up backend
+   docker-compose down -v  # -v removes volumes
+   docker-compose up -d
    ```
 
 2. **Check migration files**
    - Located in `backend/src/main/resources/db/migration/`
    - V1__initial_schema.sql creates tables
-   - V2__seed_data.sql creates admin user and sample data
+   - V2__seed_data.sql creates admin user (with ON CONFLICT for idempotency)
+
+3. **Check migration status**
+   ```bash
+   docker-compose exec postgres psql -U portfolio -d portfolio_crm \
+     -c "SELECT version, description, installed_on, success FROM flyway_schema_history;"
+   ```
 
 ### Verification Checklist
 
-After starting the application, verify:
+After starting the application with `docker-compose up -d`, verify:
 
-- [ ] PostgreSQL is running: `docker-compose ps postgres`
-- [ ] Backend health is UP: `curl http://localhost:8080/actuator/health`
-- [ ] Backend responds to login: `curl -X POST http://localhost:8080/api/v1/auth/login -H "Content-Type: application/json" -d '{"email":"admin@martiniano.dev","password":"admin123"}'`
-- [ ] Frontend is accessible: Open `http://localhost:5173`
-- [ ] Admin login works: Login at `http://localhost:5173/admin/login`
-- [ ] Dashboard loads: After login, verify dashboard shows data
+- [ ] **PostgreSQL is running and healthy**
+  ```bash
+  docker-compose ps postgres
+  # Should show: Up (healthy)
+  ```
+
+- [ ] **Backend health is UP**
+  ```bash
+  curl http://localhost:8080/actuator/health
+  # Should return: {"status":"UP","components":{"db":{"status":"UP"},...}}
+  ```
+
+- [ ] **Admin user exists**
+  ```bash
+  docker-compose logs backend | grep -i "admin"
+  # Should see: "Admin user already exists" or "Default admin user created"
+  ```
+
+- [ ] **Backend responds to login (use email field)**
+  ```bash
+  curl -X POST http://localhost:8080/api/v1/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"admin@martiniano.dev","password":"admin123"}'
+  # Should return: {"token":"eyJ...","username":"admin","email":"admin@martiniano.dev","role":"ADMIN"}
+  ```
+
+- [ ] **Frontend is accessible**
+  ```bash
+  curl -I http://localhost:5173
+  # Should return: HTTP/1.1 200 OK
+  ```
+
+- [ ] **Admin login works from UI**
+  - Open `http://localhost:5173/admin/login`
+  - Enter Email: `admin@martiniano.dev`
+  - Enter Password: `admin123`
+  - Click Login
+  - Should redirect to dashboard
+
+- [ ] **Dashboard loads with data**
+  - After login, verify dashboard shows KPIs
+  - Navigate to Leads, Clients, Projects pages
+
+### Common Fixes
+
+| Issue | Solution |
+|-------|----------|
+| "version is obsolete" warning | ✅ Fixed - removed `version:` from docker-compose.yml |
+| Validation error "username is required" | ✅ Fixed - API now uses `email` field |
+| Authentication failed despite correct credentials | ✅ Fixed - BCrypt hash updated, DataInitializer ensures admin exists |
+| Health shows DOWN | Check specific component in health details, verify DB connection |
 
 ## 📚 API Documentation
 
