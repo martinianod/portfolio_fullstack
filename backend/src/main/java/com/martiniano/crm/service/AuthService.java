@@ -6,6 +6,8 @@ import com.martiniano.crm.entity.User;
 import com.martiniano.crm.repository.UserRepository;
 import com.martiniano.crm.security.CustomUserDetailsService;
 import com.martiniano.crm.security.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthService {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+    
     private final CustomUserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
@@ -31,22 +35,39 @@ public class AuthService {
     }
 
     public LoginResponse authenticate(LoginRequest loginRequest) {
+        log.debug("Attempting authentication for email: {}", loginRequest.getEmail());
+        
         try {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
+            // loadUserByUsername now supports both username and email for backward compatibility
+            UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getEmail());
+            log.debug("User found in database for email: {}", loginRequest.getEmail());
             
             if (!passwordEncoder.matches(loginRequest.getPassword(), userDetails.getPassword())) {
-                throw new BadCredentialsException("Invalid username or password");
+                log.warn("Password mismatch for email: {}", loginRequest.getEmail());
+                throw new BadCredentialsException("Invalid credentials");
             }
+            
+            log.debug("Password verified for email: {}", loginRequest.getEmail());
 
-            User user = userRepository.findByUsername(loginRequest.getUsername())
+            // Find user by email (primary) or username (fallback for internal users)
+            // The API accepts email, but users may have username != email
+            User user = userRepository.findByEmail(loginRequest.getEmail())
+                    .or(() -> userRepository.findByUsername(loginRequest.getEmail()))
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+            log.debug("User entity retrieved for email: {}", loginRequest.getEmail());
+            
             String token = jwtUtil.generateToken(userDetails.getUsername());
+            log.debug("JWT token generated for user: {}", userDetails.getUsername());
 
             return new LoginResponse(token, user.getUsername(), user.getEmail(), user.getRole());
             
         } catch (UsernameNotFoundException e) {
-            throw new BadCredentialsException("Invalid username or password");
+            log.warn("User not found for email: {}", loginRequest.getEmail());
+            throw new BadCredentialsException("Invalid credentials");
+        } catch (Exception e) {
+            log.error("Unexpected error during authentication for email: {}", loginRequest.getEmail(), e);
+            throw e;
         }
     }
 }
