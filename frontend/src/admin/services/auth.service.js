@@ -2,11 +2,28 @@ import apiClient from './api.service';
 
 const AuthService = {
   async login(email, password) {
+    // Log request details (without password) in development
+    if (import.meta.env.DEV) {
+      console.log('[AuthService] Login attempt', {
+        email,
+        endpoint: '/api/v1/auth/login',
+        baseURL: apiClient.defaults.baseURL
+      });
+    }
+
     try {
       const response = await apiClient.post('/api/v1/auth/login', {
         email,
         password,
       });
+      
+      if (import.meta.env.DEV) {
+        console.log('[AuthService] Login successful', {
+          email,
+          status: response.status,
+          hasToken: !!response.data?.token
+        });
+      }
       
       const { token, username, email: userEmail, role } = response.data;
       
@@ -21,16 +38,35 @@ const AuthService = {
       
       return response.data;
     } catch (error) {
+      // Log error details in development
+      if (import.meta.env.DEV) {
+        console.error('[AuthService] Login failed', {
+          email,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          errorData: error.response?.data,
+          message: error.message
+        });
+      }
+
       // Enhanced error handling
       if (error.response) {
         // Server responded with error
         const errorData = error.response.data;
-        if (errorData.message) {
-          throw new Error(errorData.message);
-        } else if (errorData.fields) {
+        const status = error.response.status;
+        
+        if (status === 400 && errorData.fields) {
           // Validation errors
-          const fieldMessages = Object.values(errorData.fields).join(', ');
+          const fieldMessages = Object.entries(errorData.fields)
+            .map(([field, message]) => `${field}: ${message}`)
+            .join(', ');
           throw new Error(`Validation error: ${fieldMessages}`);
+        } else if (status === 401) {
+          // Authentication failed
+          throw new Error(errorData.message || 'Invalid email or password');
+        } else if (errorData.message) {
+          // Other server errors with message
+          throw new Error(errorData.message);
         } else {
           throw new Error('Login failed. Please check your credentials.');
         }
