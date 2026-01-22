@@ -155,6 +155,26 @@ portfolio_fullstack/
 
 ## 🔍 Troubleshooting
 
+> **📖 Comprehensive Diagnostic Guide:** For detailed login troubleshooting with logs analysis, see [LOGIN_DIAGNOSTIC.md](LOGIN_DIAGNOSTIC.md)
+
+### Quick Diagnostic Commands
+
+```bash
+# 1. Check backend health
+curl http://localhost:8080/actuator/health
+
+# 2. Test login endpoint
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@martiniano.dev","password":"admin123"}'
+
+# 3. Check backend logs
+docker-compose logs backend | tail -100
+
+# 4. Check if admin user was created
+docker-compose logs backend | grep -i "admin user"
+```
+
 ### Backend Health Check Shows DOWN
 
 1. **Check database connection**
