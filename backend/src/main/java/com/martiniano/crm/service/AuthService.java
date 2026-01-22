@@ -35,27 +35,28 @@ public class AuthService {
     }
 
     public LoginResponse authenticate(LoginRequest loginRequest) {
-        log.debug("Attempting authentication for email: {}", loginRequest.getEmail());
+        String principal = loginRequest.getPrincipal();
+        log.debug("Attempting authentication for principal: {}", principal);
         
         try {
             // loadUserByUsername now supports both username and email for backward compatibility
-            UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getEmail());
-            log.debug("User found in database for email: {}", loginRequest.getEmail());
+            UserDetails userDetails = userDetailsService.loadUserByUsername(principal);
+            log.debug("User found in database for principal: {}", principal);
             
             if (!passwordEncoder.matches(loginRequest.getPassword(), userDetails.getPassword())) {
-                log.warn("Password mismatch for email: {}", loginRequest.getEmail());
+                log.warn("Password mismatch for principal: {}", principal);
                 throw new BadCredentialsException("Invalid credentials");
             }
             
-            log.debug("Password verified for email: {}", loginRequest.getEmail());
+            log.debug("Password verified for principal: {}", principal);
 
             // Find user by email (primary) or username (fallback for internal users)
             // The API accepts email, but users may have username != email
-            User user = userRepository.findByEmail(loginRequest.getEmail())
-                    .or(() -> userRepository.findByUsername(loginRequest.getEmail()))
+            User user = userRepository.findByEmail(principal)
+                    .or(() -> userRepository.findByUsername(principal))
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-            log.debug("User entity retrieved for email: {}", loginRequest.getEmail());
+            log.debug("User entity retrieved for principal: {}", principal);
             
             String token = jwtUtil.generateToken(userDetails.getUsername());
             log.debug("JWT token generated for user: {}", userDetails.getUsername());
@@ -63,10 +64,10 @@ public class AuthService {
             return new LoginResponse(token, user.getUsername(), user.getEmail(), user.getRole());
             
         } catch (UsernameNotFoundException e) {
-            log.warn("User not found for email: {}", loginRequest.getEmail());
+            log.warn("User not found for principal: {}", principal);
             throw new BadCredentialsException("Invalid credentials");
         } catch (Exception e) {
-            log.error("Unexpected error during authentication for email: {}", loginRequest.getEmail(), e);
+            log.error("Unexpected error during authentication for principal: {}", principal, e);
             throw e;
         }
     }

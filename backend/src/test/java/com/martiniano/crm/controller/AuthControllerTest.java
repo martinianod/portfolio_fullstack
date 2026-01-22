@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -20,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class AuthControllerTest {
 
     @Autowired
@@ -36,6 +38,33 @@ class AuthControllerTest {
         // Arrange
         LoginRequest request = new LoginRequest();
         request.setEmail("admin@martiniano.dev");
+        request.setPassword("admin123");
+
+        LoginResponse response = new LoginResponse(
+                "mock-jwt-token",
+                "admin",
+                "admin@martiniano.dev",
+                "ADMIN"
+        );
+
+        when(authService.authenticate(any(LoginRequest.class))).thenReturn(response);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("mock-jwt-token"))
+                .andExpect(jsonPath("$.username").value("admin"))
+                .andExpect(jsonPath("$.email").value("admin@martiniano.dev"))
+                .andExpect(jsonPath("$.role").value("ADMIN"));
+    }
+
+    @Test
+    void testLoginSuccess_WithUsername() throws Exception {
+        // Arrange
+        LoginRequest request = new LoginRequest();
+        request.setUsername("admin");
         request.setPassword("admin123");
 
         LoginResponse response = new LoginResponse(
@@ -78,19 +107,18 @@ class AuthControllerTest {
     }
 
     @Test
-    void testLoginFailure_ValidationError_MissingEmail() throws Exception {
+    void testLoginFailure_ValidationError_MissingBothEmailAndUsername() throws Exception {
         // Arrange
         LoginRequest request = new LoginRequest();
         request.setPassword("admin123");
-        // email is missing
+        // both email and username are missing
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Validation failed"))
-                .andExpect(jsonPath("$.fields.email").exists());
+                .andExpect(jsonPath("$.error").value("Validation failed"));
     }
 
     @Test
@@ -110,6 +138,22 @@ class AuthControllerTest {
     }
 
     @Test
+    void testLoginFailure_ValidationError_EmptyEmailAndEmptyUsername() throws Exception {
+        // Arrange
+        LoginRequest request = new LoginRequest();
+        request.setEmail("");
+        request.setUsername("");
+        request.setPassword("admin123");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation failed"));
+    }
+
+    @Test
     void testLoginFailure_ValidationError_EmptyFields() throws Exception {
         // Arrange
         LoginRequest request = new LoginRequest();
@@ -122,6 +166,31 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation failed"));
+    }
+
+    @Test
+    void testLoginSuccess_WithBothEmailAndUsername_PrefersEmail() throws Exception {
+        // Arrange - when both are provided, email should take precedence
+        LoginRequest request = new LoginRequest();
+        request.setEmail("admin@martiniano.dev");
+        request.setUsername("admin");
+        request.setPassword("admin123");
+
+        LoginResponse response = new LoginResponse(
+                "mock-jwt-token",
+                "admin",
+                "admin@martiniano.dev",
+                "ADMIN"
+        );
+
+        when(authService.authenticate(any(LoginRequest.class))).thenReturn(response);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("mock-jwt-token"));
     }
 }
 

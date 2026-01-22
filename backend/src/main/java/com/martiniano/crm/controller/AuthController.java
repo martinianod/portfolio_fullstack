@@ -34,22 +34,22 @@ public class AuthController {
             HttpServletRequest httpRequest) {
         
         // Log incoming request (without password for security)
-        log.info("Login attempt - Path: {}, Method: {}, Content-Type: {}, Email: {}", 
+        log.info("Login attempt - Path: {}, Method: {}, Content-Type: {}, Principal: {}", 
                 httpRequest.getRequestURI(),
                 httpRequest.getMethod(),
                 httpRequest.getHeader("Content-Type"),
-                request.getEmail());
+                request.getPrincipal());
         
         try {
             LoginResponse response = authService.authenticate(request);
-            log.info("Login successful for email: {}", request.getEmail());
+            log.info("Login successful for principal: {}", request.getPrincipal());
             return ResponseEntity.ok(response);
         } catch (BadCredentialsException e) {
-            log.warn("Login failed for email: {} - Reason: {}", request.getEmail(), e.getMessage());
+            log.warn("Login failed for principal: {} - Reason: {}", request.getPrincipal(), e.getMessage());
             throw e; // Let the global exception handler deal with it
         } catch (Exception e) {
-            log.error("Unexpected error during login for email: {} - Error: {}", 
-                    request.getEmail(), e.getMessage(), e);
+            log.error("Unexpected error during login for principal: {} - Error: {}", 
+                    request.getPrincipal(), e.getMessage(), e);
             throw e;
         }
     }
@@ -64,7 +64,7 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException ex) {
         Map<String, String> error = new HashMap<>();
         error.put("error", "Authentication failed");
-        error.put("message", "Invalid email or password");
+        error.put("message", "Invalid email/username or password");
         log.debug("Returning 401 - Authentication failed");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
