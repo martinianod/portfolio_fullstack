@@ -58,3 +58,6 @@ app:
     recipient: ${CONTACT_RECIPIENT:admin@martiniano.dev}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
+  admin:
+    email: ${ADMIN_EMAIL:admin@martiniano.dev}
+    password: ${ADMIN_PASSWORD:admin123}
