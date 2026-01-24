@@ -377,5 +377,5 @@ El sistema ha pasado de **ALTO RIESGO** a **RIESGO MODERADO** con las mejoras im
 ---
 
 **Generado:** Enero 2026  
-**Última actualización:** {{ date }}
+**Última actualización:** 2026-01-24  
 **Branch:** copilot/analyze-and-improve-codebase
