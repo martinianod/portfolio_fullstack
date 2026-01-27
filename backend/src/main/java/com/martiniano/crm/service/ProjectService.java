@@ -2,7 +2,7 @@ package com.martiniano.crm.service;
 
 import com.martiniano.crm.dto.ProjectRequest;
 import com.martiniano.crm.entity.Project;
-import com.martiniano.crm.repository.ClientRepository;
+import com.martiniano.crm.repository.AccountRepository;
 import com.martiniano.crm.repository.ProjectRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
@@ -16,33 +16,41 @@ import java.util.List;
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
-    private final ClientRepository clientRepository;
+    private final AccountRepository accountRepository;
     private final ActivityService activityService;
 
     public ProjectService(ProjectRepository projectRepository,
-                          ClientRepository clientRepository,
+                          AccountRepository accountRepository,
                           ActivityService activityService) {
         this.projectRepository = projectRepository;
-        this.clientRepository = clientRepository;
+        this.accountRepository = accountRepository;
         this.activityService = activityService;
     }
 
     @Transactional
     public Project createProject(ProjectRequest request) {
-        if (!clientRepository.existsById(request.getClientId())) {
-            throw new EntityNotFoundException("Client not found with id: " + request.getClientId());
+        // For CLIENT type projects, accountId is required
+        if ("CLIENT".equals(request.getType()) || request.getClientId() != null) {
+            Long accountId = request.getAccountId() != null ? request.getAccountId() : request.getClientId();
+            if (accountId == null) {
+                throw new IllegalArgumentException("accountId is required for CLIENT projects");
+            }
+            if (!accountRepository.existsById(accountId)) {
+                throw new EntityNotFoundException("Account not found with id: " + accountId);
+            }
         }
 
         Project project = new Project();
-        project.setClientId(request.getClientId());
+        // Support both accountId and clientId (legacy) from request
+        project.setAccountId(request.getAccountId() != null ? request.getAccountId() : request.getClientId());
         project.setName(request.getName());
         project.setDescription(request.getDescription());
-        project.setStatus(request.getStatus() != null ? request.getStatus() : "DISCOVERY");
+        project.setStatus(request.getStatus() != null ? request.getStatus() : "PLANNED");
+        project.setType(request.getType() != null ? request.getType() : "CLIENT");
         project.setStartDate(request.getStartDate());
         project.setTargetDate(request.getTargetDate());
         project.setCompletionDate(request.getCompletionDate());
         project.setStack(request.getStack());
-        project.setRepoLink(request.getRepoLink());
         project.setDeployLink(request.getDeployLink());
         project.setEstimatedHours(request.getEstimatedHours());
         project.setActualHours(request.getActualHours());
@@ -69,10 +77,16 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<Project> getProjectsByClientId(Long clientId) {
-        if (!clientRepository.existsById(clientId)) {
-            throw new EntityNotFoundException("Client not found with id: " + clientId);
+        // Legacy method - delegates to getProjectsByAccountId
+        return getProjectsByAccountId(clientId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Project> getProjectsByAccountId(Long accountId) {
+        if (!accountRepository.existsById(accountId)) {
+            throw new EntityNotFoundException("Account not found with id: " + accountId);
         }
-        return projectRepository.findByClientId(clientId);
+        return projectRepository.findByAccountId(accountId);
     }
 
     @Transactional(readOnly = true)
@@ -84,11 +98,13 @@ public class ProjectService {
     public Project updateProject(Long id, ProjectRequest request) {
         Project project = getProjectById(id);
 
-        if (request.getClientId() != null && !request.getClientId().equals(project.getClientId())) {
-            if (!clientRepository.existsById(request.getClientId())) {
-                throw new EntityNotFoundException("Client not found with id: " + request.getClientId());
+        // Support both accountId and clientId (legacy) from request
+        Long newAccountId = request.getAccountId() != null ? request.getAccountId() : request.getClientId();
+        if (newAccountId != null && !newAccountId.equals(project.getAccountId())) {
+            if (!accountRepository.existsById(newAccountId)) {
+                throw new EntityNotFoundException("Account not found with id: " + newAccountId);
             }
-            project.setClientId(request.getClientId());
+            project.setAccountId(newAccountId);
         }
         if (request.getName() != null) {
             project.setName(request.getName());
@@ -110,9 +126,6 @@ public class ProjectService {
         }
         if (request.getStack() != null) {
             project.setStack(request.getStack());
-        }
-        if (request.getRepoLink() != null) {
-            project.setRepoLink(request.getRepoLink());
         }
         if (request.getDeployLink() != null) {
             project.setDeployLink(request.getDeployLink());
